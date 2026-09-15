@@ -8,7 +8,10 @@
     "lint": "eslint",
     "db:seed": "tsx scripts/seed.ts",
     "verify:tools": "tsx scripts/verify-tools.ts",
-    "verify:data-access": "tsx scripts/verify-data-access.ts"
+    "verify:data-access": "tsx scripts/verify-data-access.ts",
+    "verify:policy": "tsx scripts/verify-policy.ts",
+    "verify:agent": "tsx scripts/verify-agent.ts",
+    "verify:browser": "tsx scripts/verify-browser.ts"
   },
   "dependencies": {
     "@google/genai": "^2.22.0",
@@ -26,6 +29,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.5",
+    "playwright": "^1.63.0",
     "tailwindcss": "^4",
     "tsx": "^4.23.13",
     "typescript": "^5"

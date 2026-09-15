@@ -1,6 +1,4 @@
- 
-
-import {
+ import {
   findCustomerByEmail,
   findCustomerById,
   findCustomerByName,
@@ -10,6 +8,7 @@ import {
   findAppointmentById,
   findAppointmentsByCustomerId,
   findAppointmentAtTime,
+  rescheduleAppointment,
 } from "@/lib/db/repositories/appointments";
 
 import {
@@ -115,6 +114,34 @@ export function getCompanyPolicy(
   return findActivePolicyByCategory(
     categoryMap[policyType],
   );
+}
+
+export function rescheduleAppointmentTool(
+  input: {
+    appointmentId: string;
+    date: string;
+    time: string;
+  },
+) {
+  const appointment =
+    rescheduleAppointment(
+      input.appointmentId,
+      input.date,
+      input.time,
+    );
+
+  if (!appointment) {
+    return {
+      success: false,
+      error:
+        "Appointment could not be rescheduled.",
+    };
+  }
+
+  return {
+    success: true,
+    appointment,
+  };
 }
 
 export function getEmail(emailId: string) {

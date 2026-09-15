@@ -7,6 +7,9 @@ import {
   getToolMetadata,
   isRegisteredTool,
 } from "@/lib/tools/registry";
+import {
+  rescheduleAppointmentTool,
+} from "@/lib/tools/implementations";
 
 export function validateToolCall(input: unknown) {
   return ToolCallSchema.safeParse(input);
@@ -44,7 +47,8 @@ export function validateToolArguments(
 export function executeRegisteredTool(
   input: unknown,
 ): ToolResult {
-  const parsedCall = validateToolCall(input);
+  const parsedCall =
+    validateToolCall(input);
 
   if (!parsedCall.success) {
     const possibleToolName =
@@ -52,8 +56,9 @@ export function executeRegisteredTool(
       typeof input === "object" &&
       "toolName" in input
         ? String(
-            (input as { toolName?: unknown }).toolName ??
-              "unknown",
+            (input as {
+              toolName?: unknown;
+            }).toolName ?? "unknown",
           )
         : "unknown";
 
@@ -61,16 +66,21 @@ export function executeRegisteredTool(
       success: false,
       toolName: possibleToolName,
       data: null,
-      error: "Invalid or unregistered tool call.",
+      error:
+        "Invalid or unregistered tool call.",
     };
   }
 
-  const { toolName, arguments: args } = parsedCall.data;
-
-  const argumentResult = validateToolArguments(
+  const {
     toolName,
-    args,
-  );
+    arguments: args,
+  } = parsedCall.data;
+
+  const argumentResult =
+    validateToolArguments(
+      toolName,
+      args,
+    );
 
   if (!argumentResult.success) {
     return {
@@ -81,7 +91,63 @@ export function executeRegisteredTool(
     };
   }
 
-  const metadata = getToolMetadata(toolName);
+  // ----------------------------------------------------------
+  // Executable tool: reschedule appointment
+  // ----------------------------------------------------------
+
+  if (
+    toolName ===
+    "reschedule_appointment"
+  ) {
+    const rescheduleArgs =
+      ToolInputSchemas
+        .reschedule_appointment
+        .safeParse(args);
+
+    if (!rescheduleArgs.success) {
+      return {
+        success: false,
+        toolName,
+        data: null,
+        error:
+          rescheduleArgs.error.issues
+            .map(
+              (issue) => issue.message,
+            )
+            .join("; "),
+      };
+    }
+
+   const result =
+  rescheduleAppointmentTool({
+    appointmentId:
+      rescheduleArgs.data.appointmentId,
+    date:
+      rescheduleArgs.data.requestedDate,
+    time:
+      rescheduleArgs.data.requestedTime,
+  });
+
+    return {
+      success: result.success,
+      toolName,
+      data: result.success
+        ? result.appointment
+        : null,
+      error: result.success
+        ? result.error ?? null
+        : result.error ?? "Appointment rescheduling failed.",
+    };
+  }
+
+  // ----------------------------------------------------------
+  // Other registered tools are not executable yet.
+  // ----------------------------------------------------------
+
+  const metadata =
+    getToolMetadata(toolName);
+
+  void metadata;
 
   return {
     success: false,
@@ -89,6 +155,6 @@ export function executeRegisteredTool(
     data: null,
     error:
       `Tool "${toolName}" is registered and validated, ` +
-      `but execution is intentionally disabled in Phase 5.`,
+      `but execution is not implemented yet.`,
   };
 }

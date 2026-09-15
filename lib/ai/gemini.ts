@@ -13,7 +13,7 @@ const ai = new GoogleGenAI({
 });
 
 const model =
-  process.env.GEMINI_MODEL ?? "gemini-2.5-flash-lite";
+  process.env.GEMINI_MODEL ?? "gemini-3.5-flash-lite";
 
 const agentPlanResponseSchema = {
   type: "object",
