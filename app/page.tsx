@@ -1,4 +1,4 @@
-import Image from "next/image";
+import Link from "next/link";
 
 export default function Home() {
   return (
@@ -34,16 +34,23 @@ export default function Home() {
             Understand. Authorize. Execute. Verify.
           </p>
 
-          <div className="mt-10">
+          <div className="mt-10 flex items-center gap-3">
             <button
               type="button"
-              className="rounded-md bg-[#24463A] px-5 py-3 text-sm font-medium text-white"
+              className="rounded-md bg-[#24463A] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#1d3920]"
             >
               Start Mission
             </button>
+
+            <Link
+              href="/inbox"
+              className="inline-flex rounded-md border border-black/15 bg-white px-5 py-3 text-sm font-medium transition hover:bg-black/5"
+            >
+              Open Northstar Operations
+            </Link>
           </div>
         </section>
       </div>
     </main>
   );
-};
+}
