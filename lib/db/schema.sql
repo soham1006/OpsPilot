@@ -74,6 +74,33 @@ CREATE TABLE tasks (
   FOREIGN KEY (source_email_id) REFERENCES emails(id)
 );
 
+CREATE TABLE missions (
+  id TEXT PRIMARY KEY,
+  goal TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'PENDING',
+  created_at TEXT NOT NULL,
+  started_at TEXT,
+  completed_at TEXT
+);
+
+CREATE TABLE mission_tasks (
+  mission_id TEXT NOT NULL,
+  task_id TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  PRIMARY KEY (mission_id, task_id),
+  FOREIGN KEY (mission_id) REFERENCES missions(id),
+  FOREIGN KEY (task_id) REFERENCES tasks(id)
+);
+
+CREATE INDEX idx_missions_status
+  ON missions(status);
+
+CREATE INDEX idx_mission_tasks_mission
+  ON mission_tasks(mission_id);
+
+CREATE INDEX idx_mission_tasks_task
+  ON mission_tasks(task_id);
+
 CREATE TABLE agent_runs (
   id TEXT PRIMARY KEY,
   mission TEXT NOT NULL,

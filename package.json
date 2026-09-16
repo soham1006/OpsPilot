@@ -11,7 +11,14 @@
     "verify:data-access": "tsx scripts/verify-data-access.ts",
     "verify:policy": "tsx scripts/verify-policy.ts",
     "verify:agent": "tsx scripts/verify-agent.ts",
-    "verify:browser": "tsx scripts/verify-browser.ts"
+    "verify:browser": "tsx scripts/verify-browser.ts",
+    "verify:appointment": "tsx scripts/verify-appointment.ts",
+    "verify:cancellation": "tsx scripts/verify-cancellation.ts",
+    "verify:refund": "tsx scripts/verify-refund.ts",
+    "verify:approval": "tsx scripts/verify-approval.ts",
+    "verify:approved-refund": "tsx scripts/verify-approved-refund.ts",
+    "verify:recovery": "tsx scripts/verify-recovery.ts",
+    "verify:mission": "tsx scripts/verify-mission.ts"
   },
   "dependencies": {
     "@google/genai": "^2.22.0",

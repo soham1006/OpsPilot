@@ -98,6 +98,35 @@ export function rescheduleAppointment(
   return appointment ?? null;
 }
 
+export function cancelAppointment(
+  appointmentId: string,
+): AppointmentRecord | null {
+  const current = findAppointmentById(appointmentId);
+
+  if (!current) {
+    return null;
+  }
+
+  const appointment = db
+    .prepare(`
+      UPDATE appointments
+      SET status = 'cancelled'
+      WHERE id = ?
+      RETURNING
+        id,
+        customer_id AS customerId,
+        service,
+        scheduled_start AS scheduledStart,
+        scheduled_end AS scheduledEnd,
+        status,
+        technician,
+        location
+    `)
+    .get(appointmentId) as AppointmentRecord | undefined;
+
+  return appointment ?? null;
+}
+
 export function findAppointmentsByCustomerId(
   customerId: string,
 ): AppointmentRecord[] {

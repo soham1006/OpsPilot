@@ -31,6 +31,14 @@ import type {
   AgentPlan,
 } from "@/types/agent";
 
+import {
+  verifyAppointmentReschedule,
+} from "@/lib/verification/appointment";
+
+import {
+  decideRecovery,
+} from "@/lib/verification/recovery";
+
 type PlannerInput = {
   sender: string;
   subject: string;
@@ -44,7 +52,18 @@ interface PlannedTool {
     | "check_availability"
     | "get_company_policy"
     | "get_invoice";
+
   arguments: Record<string, unknown>;
+}
+
+interface WorkflowContext {
+  customerId?: string;
+  appointmentId?: string;
+  requestedDate?: string;
+  requestedTime?: string;
+  availabilityChecked?: boolean;
+  availabilityConfirmed?: boolean;
+  policyChecked?: boolean;
 }
 
 function mapPlanStepToTool(
@@ -138,7 +157,8 @@ function mapPlanStepToTool(
           return {
             toolName: "get_company_policy",
             arguments: {
-              policyType: "BANK_ACCOUNT_CHANGE",
+              policyType:
+                "BANK_ACCOUNT_CHANGE",
             },
           };
 
@@ -157,9 +177,8 @@ function mapPlanStepToTool(
         return null;
       }
 
-      // At this stage the planner may not know the invoice ID.
-      // We therefore require an explicit appointment/invoice
-      // reference rather than guessing.
+      // The planner may not know the invoice ID.
+      // Never guess an invoice.
       return null;
     }
 
@@ -180,6 +199,8 @@ export async function runAgent(
   let state = createAgentState(
     input.body,
   );
+
+  const workflow: WorkflowContext = {};
 
   state = setAgentStatus(
     state,
@@ -209,6 +230,14 @@ export async function runAgent(
     state,
     plan,
   );
+
+  workflow.requestedDate =
+    plan.entities.requestedDate ??
+    undefined;
+
+  workflow.requestedTime =
+    plan.entities.requestedTime ??
+    undefined;
 
   // ----------------------------------------------------------
   // Risk / confidence guard
@@ -255,7 +284,8 @@ export async function runAgent(
     ) {
       return {
         ...state,
-        status: "MAX_STEPS_REACHED",
+        status:
+          "MAX_STEPS_REACHED",
         finalMessage:
           "Agent stopped after reaching the maximum step limit.",
       };
@@ -279,7 +309,8 @@ export async function runAgent(
         state,
         {
           stepNumber,
-          action: plannedStep.action,
+          action:
+            plannedStep.action,
           observation:
             `Planning step "${plannedStep.action}" requires clarification or is not executable yet.`,
         },
@@ -301,9 +332,12 @@ export async function runAgent(
         state,
         {
           stepNumber,
-          action: plannedStep.action,
-          toolName: mappedTool.toolName,
-          arguments: mappedTool.arguments,
+          action:
+            plannedStep.action,
+          toolName:
+            mappedTool.toolName,
+          arguments:
+            mappedTool.arguments,
           observation:
             "Mapped tool is not registered.",
         },
@@ -334,9 +368,12 @@ export async function runAgent(
         state,
         {
           stepNumber,
-          action: plannedStep.action,
-          toolName: mappedTool.toolName,
-          arguments: mappedTool.arguments,
+          action:
+            plannedStep.action,
+          toolName:
+            mappedTool.toolName,
+          arguments:
+            mappedTool.arguments,
           observation:
             argumentValidation.error,
         },
@@ -365,15 +402,19 @@ export async function runAgent(
     // --------------------------------------------------------
 
     if (
-      policy.decision === "BLOCK"
+      policy.decision ===
+      "BLOCK"
     ) {
       state = addAgentStep(
         state,
         {
           stepNumber,
-          action: plannedStep.action,
-          toolName: mappedTool.toolName,
-          arguments: mappedTool.arguments,
+          action:
+            plannedStep.action,
+          toolName:
+            mappedTool.toolName,
+          arguments:
+            mappedTool.arguments,
           policy,
           observation:
             policy.reason,
@@ -400,9 +441,12 @@ export async function runAgent(
         state,
         {
           stepNumber,
-          action: plannedStep.action,
-          toolName: mappedTool.toolName,
-          arguments: mappedTool.arguments,
+          action:
+            plannedStep.action,
+          toolName:
+            mappedTool.toolName,
+          arguments:
+            mappedTool.arguments,
           policy,
           observation:
             "Human approval is required before execution.",
@@ -411,14 +455,15 @@ export async function runAgent(
 
       return {
         ...state,
-        status: "WAITING_FOR_APPROVAL",
+        status:
+          "WAITING_FOR_APPROVAL",
         finalMessage:
           "Human approval is required before this operation can execute.",
       };
     }
 
     // --------------------------------------------------------
-    // ALLOW
+    // ALLOW — Execute registered tool
     // --------------------------------------------------------
 
     const result =
@@ -433,7 +478,8 @@ export async function runAgent(
       state,
       {
         stepNumber,
-        action: plannedStep.action,
+        action:
+          plannedStep.action,
         toolName:
           mappedTool.toolName,
         arguments:
@@ -446,8 +492,271 @@ export async function runAgent(
       },
     );
 
-    // Phase 5 intentionally doesn't execute
-    // registered tools yet.
+    // --------------------------------------------------------
+    // Capture workflow observations
+    // --------------------------------------------------------
+
+    if (
+      result.success &&
+      mappedTool.toolName ===
+        "get_customer"
+    ) {
+      const customer =
+        result.data as
+          | {
+              id?: string;
+            }
+          | null;
+
+      if (customer?.id) {
+        workflow.customerId =
+          customer.id;
+      }
+    }
+
+    if (
+      result.success &&
+      mappedTool.toolName ===
+        "get_appointment"
+    ) {
+      const appointment =
+        result.data as
+          | {
+              id?: string;
+            }
+          | null;
+
+      if (appointment?.id) {
+        workflow.appointmentId =
+          appointment.id;
+      }
+    }
+
+    if (
+      result.success &&
+      mappedTool.toolName ===
+        "check_availability"
+    ) {
+      const availability =
+        result.data as
+          | {
+              available?: boolean;
+            }
+          | null;
+
+      workflow.availabilityChecked =
+        true;
+
+      workflow.availabilityConfirmed =
+        availability?.available ===
+        true;
+    }
+
+    // --------------------------------------------------------
+    // Controlled appointment reschedule
+    // --------------------------------------------------------
+
+    if (
+      plan.intent ===
+        "APPOINTMENT_RESCHEDULE" &&
+      mappedTool.toolName ===
+        "check_availability" &&
+      workflow.availabilityConfirmed &&
+      workflow.appointmentId &&
+      workflow.requestedDate &&
+      workflow.requestedTime
+    ) {
+      const rescheduleTool = {
+        toolName:
+          "reschedule_appointment",
+        arguments: {
+          appointmentId:
+            workflow.appointmentId,
+          requestedDate:
+            workflow.requestedDate,
+          requestedTime:
+            workflow.requestedTime,
+        },
+      };
+
+      // ----------------------------------------------
+      // Validate mutation arguments
+      // ----------------------------------------------
+
+      const rescheduleValidation =
+        validateToolArguments(
+          rescheduleTool.toolName,
+          rescheduleTool.arguments,
+        );
+
+      if (
+        !rescheduleValidation.success
+      ) {
+        return {
+          ...state,
+          status: "BLOCKED",
+          finalMessage:
+            "Reschedule arguments failed validation.",
+        };
+      }
+
+      // ----------------------------------------------
+      // Deterministic policy
+      // ----------------------------------------------
+
+      const reschedulePolicy =
+        evaluateToolPolicy(
+          "reschedule_appointment",
+          rescheduleTool.arguments,
+        );
+
+      if (
+        reschedulePolicy.decision !==
+        "ALLOW"
+      ) {
+        state = addAgentStep(
+          state,
+          {
+            stepNumber:
+              state.steps.length + 1,
+            action:
+              "RESCHEDULE_APPOINTMENT",
+            toolName:
+              "reschedule_appointment",
+            arguments:
+              rescheduleTool.arguments,
+            policy:
+              reschedulePolicy,
+            observation:
+              reschedulePolicy.reason,
+          },
+        );
+
+        return {
+          ...state,
+          status:
+            reschedulePolicy.decision ===
+            "APPROVAL_REQUIRED"
+              ? "WAITING_FOR_APPROVAL"
+              : "BLOCKED",
+          finalMessage:
+            reschedulePolicy.reason,
+        };
+      }
+
+      // ----------------------------------------------
+      // Execute mutation
+      // ----------------------------------------------
+
+      const rescheduleResult =
+        executeRegisteredTool(
+          rescheduleTool,
+        );
+
+      state = addAgentStep(
+        state,
+        {
+          stepNumber:
+            state.steps.length + 1,
+          action:
+            "RESCHEDULE_APPOINTMENT",
+          toolName:
+            "reschedule_appointment",
+          arguments:
+            rescheduleTool.arguments,
+          policy:
+            reschedulePolicy,
+          result:
+            rescheduleResult,
+          observation:
+            rescheduleResult.error ??
+            "Appointment rescheduled.",
+        },
+      );
+
+     if (!rescheduleResult.success) {
+  return {
+    ...state,
+    status: "FAILED",
+    finalMessage:
+      rescheduleResult.error ??
+      "Appointment rescheduling failed.",
+  };
+}
+
+// --------------------------------------------------------
+// Verification
+// --------------------------------------------------------
+
+const verification =
+  verifyAppointmentReschedule(
+    workflow.appointmentId,
+    workflow.requestedDate,
+    workflow.requestedTime,
+  );
+
+state = addAgentStep(
+  state,
+  {
+    stepNumber:
+      state.steps.length + 1,
+    action:
+      "VERIFY_RESCHEDULE",
+    observation:
+      verification.reason,
+  },
+);
+
+if (!verification.verified) {
+  const recovery =
+    decideRecovery({
+      operationSucceeded:
+        rescheduleResult.success,
+      verificationSucceeded:
+        verification.verified,
+      retryCount: 0,
+    });
+
+  state = addAgentStep(
+    state,
+    {
+      stepNumber:
+        state.steps.length + 1,
+      action: "RECOVERY_DECISION",
+      observation:
+        recovery.reason,
+    },
+  );
+
+  if (recovery.action === "ESCALATE") {
+    return {
+      ...state,
+      status: "FAILED",
+      finalMessage:
+        "Appointment rescheduling could not be verified and requires escalation.",
+    };
+  }
+
+  return {
+    ...state,
+    status: "FAILED",
+    finalMessage:
+      "Appointment rescheduling could not be verified. A controlled retry is required.",
+  };
+}
+
+return {
+  ...state,
+  status: "COMPLETED",
+  finalMessage:
+    "Appointment rescheduled and verified successfully.",
+};
+    }
+
+    // --------------------------------------------------------
+    // Tool execution failure
+    // --------------------------------------------------------
+
     if (!result.success) {
       return {
         ...state,

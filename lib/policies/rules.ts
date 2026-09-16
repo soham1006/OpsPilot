@@ -131,23 +131,73 @@ export function evaluatePolicyRules(
     };
   }
 
-  if (toolName === "cancel_appointment") {
-    if (!context.appointmentId) {
-      return {
-        decision: "BLOCK",
-        riskLevel: "LOW",
-        reason:
-          "Appointment cancellation requires an appointment identifier.",
-      };
-    }
-
+if (toolName === "cancel_appointment") {
+  if (!context.appointmentId) {
     return {
-      decision: "ALLOW",
+      decision: "BLOCK",
       riskLevel: "LOW",
       reason:
-        "Appointment cancellation is permitted subject to cancellation policy.",
+        "Appointment cancellation requires an appointment identifier.",
     };
   }
+
+  if (!context.currentTime) {
+    return {
+      decision: "BLOCK",
+      riskLevel: "LOW",
+      reason:
+        "Cancellation requires a known current time to enforce the cancellation policy.",
+    };
+  }
+
+  if (!context.requestedDate || !context.requestedTime) {
+    return {
+      decision: "BLOCK",
+      riskLevel: "LOW",
+      reason:
+        "Cancellation requires the appointment date and time to enforce the cancellation policy.",
+    };
+  }
+
+  const currentTime = new Date(context.currentTime);
+
+  const appointmentTime = new Date(
+    `${context.requestedDate}T${context.requestedTime}:00Z`,
+  );
+
+  if (
+    Number.isNaN(currentTime.getTime()) ||
+    Number.isNaN(appointmentTime.getTime())
+  ) {
+    return {
+      decision: "BLOCK",
+      riskLevel: "LOW",
+      reason:
+        "Cancellation could not be authorized because the appointment time or current time is invalid.",
+    };
+  }
+
+  const hoursUntilAppointment =
+    (appointmentTime.getTime() - currentTime.getTime()) /
+    (1000 * 60 * 60);
+
+  if (hoursUntilAppointment < 24) {
+    return {
+      decision: "BLOCK",
+      riskLevel: "LOW",
+      reason:
+        "Appointments cannot be cancelled less than 24 hours before the scheduled start time.",
+    };
+  }
+
+  return {
+    decision: "ALLOW",
+    riskLevel: "LOW",
+    reason:
+      "Appointment cancellation is permitted because the appointment is at least 24 hours away.",
+  };
+}
+  
 
   // ----------------------------------------------------------
   // Internal task
@@ -186,3 +236,4 @@ export function evaluatePolicyRules(
       "No explicit policy rule permits this operation.",
   };
 }
+
