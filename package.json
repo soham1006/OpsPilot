@@ -18,11 +18,15 @@
     "verify:approval": "tsx scripts/verify-approval.ts",
     "verify:approved-refund": "tsx scripts/verify-approved-refund.ts",
     "verify:recovery": "tsx scripts/verify-recovery.ts",
-    "verify:mission": "tsx scripts/verify-mission.ts"
+    "verify:mission": "tsx scripts/verify-mission.ts",
+"verify:mission-runner": "tsx --env-file=.env.local scripts/verify-mission-runner.ts",
+"verify:execution-persistence": "tsx scripts/verify-execution-persistence.ts",
+"verify:real-agent-persistence": "tsx --env-file=.env.local scripts/verify-real-agent-persistence.ts"
   },
   "dependencies": {
     "@google/genai": "^2.22.0",
     "better-sqlite3": "^13.0.3",
+    "dotenv": "^17.4.2",
     "next": "16.3.5",
     "react": "19.2.8",
     "react-dom": "19.2.8",

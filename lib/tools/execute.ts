@@ -3,11 +3,16 @@ import {
   ToolInputSchemas,
   type ToolResult,
 } from "@/lib/tools/schemas";
+
 import {
   getToolMetadata,
   isRegisteredTool,
 } from "@/lib/tools/registry";
+
 import {
+  checkAvailability,
+  getAppointment,
+  getCustomer,
   rescheduleAppointmentTool,
 } from "@/lib/tools/implementations";
 
@@ -88,6 +93,129 @@ export function executeRegisteredTool(
       toolName,
       data: null,
       error: argumentResult.error,
+    };
+  }
+
+    // ----------------------------------------------------------
+  // Executable tool: get customer
+  // ----------------------------------------------------------
+
+  if (toolName === "get_customer") {
+    const customerArgs =
+      ToolInputSchemas
+        .get_customer
+        .safeParse(args);
+
+    if (!customerArgs.success) {
+      return {
+        success: false,
+        toolName,
+        data: null,
+        error:
+          customerArgs.error.issues
+            .map((issue) => issue.message)
+            .join("; "),
+      };
+    }
+
+    const customer = getCustomer(
+      customerArgs.data,
+    );
+
+    if (!customer) {
+      return {
+        success: false,
+        toolName,
+        data: null,
+        error: "Customer could not be found.",
+      };
+    }
+
+    return {
+      success: true,
+      toolName,
+      data: customer,
+      error: null,
+    };
+  }
+
+    // ----------------------------------------------------------
+  // Executable tool: get appointment
+  // ----------------------------------------------------------
+
+  if (toolName === "get_appointment") {
+    const appointmentArgs =
+      ToolInputSchemas
+        .get_appointment
+        .safeParse(args);
+
+    if (!appointmentArgs.success) {
+      return {
+        success: false,
+        toolName,
+        data: null,
+        error:
+          appointmentArgs.error.issues
+            .map((issue) => issue.message)
+            .join("; "),
+      };
+    }
+
+    const appointment =
+      getAppointment(
+        appointmentArgs.data,
+      );
+
+    if (!appointment) {
+      return {
+        success: false,
+        toolName,
+        data: null,
+        error:
+          "Appointment could not be found.",
+      };
+    }
+
+    return {
+      success: true,
+      toolName,
+      data: appointment,
+      error: null,
+    };
+  }
+
+    // ----------------------------------------------------------
+  // Executable tool: check availability
+  // ----------------------------------------------------------
+
+  if (toolName === "check_availability") {
+    const availabilityArgs =
+      ToolInputSchemas
+        .check_availability
+        .safeParse(args);
+
+    if (!availabilityArgs.success) {
+      return {
+        success: false,
+        toolName,
+        data: null,
+        error:
+          availabilityArgs.error.issues
+            .map((issue) => issue.message)
+            .join("; "),
+      };
+    }
+
+    const availability =
+      checkAvailability(
+        availabilityArgs.data,
+      );
+
+    return {
+      success: true,
+      toolName,
+      data: availability,
+      error: null,
     };
   }
 

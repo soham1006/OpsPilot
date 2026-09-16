@@ -39,6 +39,10 @@ import {
   decideRecovery,
 } from "@/lib/verification/recovery";
 
+import {
+  findAppointmentsByCustomerId,
+} from "@/lib/db/repositories/appointments";
+
 type PlannerInput = {
   sender: string;
   subject: string;
@@ -304,20 +308,27 @@ export async function runAgent(
     // No executable tool mapping
     // --------------------------------------------------------
 
-    if (!mappedTool) {
-      state = addAgentStep(
-        state,
-        {
-          stepNumber,
-          action:
-            plannedStep.action,
-          observation:
-            `Planning step "${plannedStep.action}" requires clarification or is not executable yet.`,
-        },
-      );
+   if (!mappedTool) {
+  state = addAgentStep(
+    state,
+    {
+      stepNumber,
+      action: plannedStep.action,
+      observation:
+        `Planning step "${plannedStep.action}" requires clarification or is not executable yet.`,
+    },
+  );
 
-      continue;
-    }
+  return {
+    ...state,
+    status: "BLOCKED",
+    finalMessage:
+      plannedStep.action ===
+      "ESCALATE_FOR_CLARIFICATION"
+        ? "Additional customer information is required before the requested operation can be safely executed."
+        : `Planning step "${plannedStep.action}" could not be executed.`,
+  };
+}
 
     // --------------------------------------------------------
     // Registry
@@ -497,22 +508,58 @@ export async function runAgent(
     // --------------------------------------------------------
 
     if (
-      result.success &&
-      mappedTool.toolName ===
-        "get_customer"
-    ) {
-      const customer =
-        result.data as
-          | {
-              id?: string;
-            }
-          | null;
+  result.success &&
+  mappedTool.toolName ===
+    "get_customer"
+) {
+  const customer =
+    result.data as
+      | {
+          id?: string;
+        }
+      | null;
 
-      if (customer?.id) {
-        workflow.customerId =
-          customer.id;
+  if (customer?.id) {
+    workflow.customerId =
+      customer.id;
+
+    // ------------------------------------------------------
+    // Deterministic appointment resolution
+    // ------------------------------------------------------
+    //
+    // If the customer did not provide an appointment
+    // reference, resolve it from the customer's records.
+    //
+    // Never guess when multiple appointments exist.
+    //
+
+    if (
+      plan.intent ===
+        "APPOINTMENT_RESCHEDULE" &&
+      !plan.entities.appointmentReference
+    ) {
+      const appointments =
+        findAppointmentsByCustomerId(
+          customer.id,
+        );
+
+      const activeAppointments =
+        appointments.filter(
+          (appointment) =>
+            appointment.status ===
+            "scheduled",
+        );
+
+      if (
+        activeAppointments.length ===
+        1
+      ) {
+        workflow.appointmentId =
+          activeAppointments[0].id;
       }
     }
+  }
+}
 
     if (
       result.success &&

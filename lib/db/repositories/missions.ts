@@ -112,6 +112,32 @@ export function findMissionById(
   return mission ?? null;
 }
 
+export function findMissions(
+  limit = 50,
+): MissionRecord[] {
+  ensureMissionTables();
+
+  const safeLimit = Math.max(
+    1,
+    Math.min(limit, 100),
+  );
+
+  return db
+    .prepare(`
+      SELECT
+        id,
+        goal,
+        status,
+        created_at AS createdAt,
+        started_at AS startedAt,
+        completed_at AS completedAt
+      FROM missions
+      ORDER BY created_at DESC
+      LIMIT ?
+    `)
+    .all(safeLimit) as MissionRecord[];
+}
+
 export function addTaskToMission(
   missionId: string,
   taskId: string,

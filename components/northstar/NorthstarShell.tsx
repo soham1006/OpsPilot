@@ -8,6 +8,7 @@ const navigation = [
   { href: "/billing", label: "Billing" },
   { href: "/policies", label: "Policies" },
   { href: "/tasks", label: "Tasks" },
+  { href: "/missions", label: "Missions" },
 ];
 
 export default function NorthstarShell({
