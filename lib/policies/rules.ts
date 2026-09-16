@@ -33,21 +33,6 @@ export function evaluatePolicyRules(
 ): PolicyRuleResult {
   const { toolName } = context;
 
-  // ----------------------------------------------------------
-  // CRITICAL: bank-account changes can never be executed
-  // ----------------------------------------------------------
-
-  if (
-    toolName === "send_email" &&
-    context.requestedDate === "BANK_ACCOUNT_CHANGE"
-  ) {
-    return {
-      decision: "BLOCK",
-      riskLevel: "CRITICAL",
-      reason:
-        "Critical financial account changes must never be executed by the AI agent.",
-    };
-  }
 
   // ----------------------------------------------------------
   // Refund policy

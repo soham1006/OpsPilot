@@ -19,9 +19,19 @@
     "verify:approved-refund": "tsx scripts/verify-approved-refund.ts",
     "verify:recovery": "tsx scripts/verify-recovery.ts",
     "verify:mission": "tsx scripts/verify-mission.ts",
-"verify:mission-runner": "tsx --env-file=.env.local scripts/verify-mission-runner.ts",
-"verify:execution-persistence": "tsx scripts/verify-execution-persistence.ts",
-"verify:real-agent-persistence": "tsx --env-file=.env.local scripts/verify-real-agent-persistence.ts"
+    "verify:mission-runner": "tsx --env-file=.env.local scripts/verify-mission-runner.ts",
+    "verify:execution-persistence": "tsx scripts/verify-execution-persistence.ts",
+    "verify:real-agent-persistence": "tsx --env-file=.env.local scripts/verify-real-agent-persistence.ts",
+    "verify:audit": "tsx scripts/verify-audit.ts",
+    "verify:evaluation": "tsx scripts/verify-evaluation.ts",
+    "verify:evaluation-sandbox": "tsx scripts/verify-evaluation-sandbox.ts",
+    "verify:evaluation:real": "tsx -r ./scripts/load-env.ts scripts/verify-real-evaluation.ts" ,
+    "verify:security": "tsx scripts/verify-security.ts",
+    "verify:prompt-injection": "tsx scripts/verify-prompt-injection.ts",
+    "verify:tool-boundary": "tsx scripts/verify-tool-boundary.ts",
+    "verify:critical-actions": "tsx scripts/verify-critical-actions.ts",
+    "verify:approval-security": "tsx scripts/verify-approval-security.ts",
+    "verify:security:suite": "tsx scripts/verify-security-suite.ts"
   },
   "dependencies": {
     "@google/genai": "^2.22.0",
