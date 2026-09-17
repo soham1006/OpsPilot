@@ -15,6 +15,8 @@ import {
   evaluateToolPolicy,
 } from "@/lib/policies/engine";
 
+import { createApprovalRequest } from "@/lib/agent/approval";
+
 import {
   addAgentStep,
   attachPlan,
@@ -43,6 +45,7 @@ import {
   findAppointmentsByCustomerId,
 } from "@/lib/db/repositories/appointments";
 
+
 type PlannerInput = {
   sender: string;
   subject: string;
@@ -55,7 +58,8 @@ interface PlannedTool {
     | "get_appointment"
     | "check_availability"
     | "get_company_policy"
-    | "get_invoice";
+    | "get_invoice"
+    | "request_refund";
 
   arguments: Record<string, unknown>;
 }
@@ -131,6 +135,19 @@ function mapPlanStepToTool(
       };
     }
 
+    case "FIND_INVOICE": {
+  if (!entities.invoiceReference) {
+    return null;
+  }
+
+  return {
+    toolName: "get_invoice",
+    arguments: {
+      invoiceId: entities.invoiceReference,
+    },
+  };
+}
+
     case "READ_RELEVANT_POLICY": {
       switch (plan.intent) {
         case "APPOINTMENT_RESCHEDULE":
@@ -177,14 +194,23 @@ function mapPlanStepToTool(
     }
 
     case "REVIEW_BILLING_CONTEXT": {
-      if (!entities.refundAmountCents) {
-        return null;
-      }
+  if (!entities.refundAmountCents) {
+    return null;
+  }
 
-      // The planner may not know the invoice ID.
-      // Never guess an invoice.
-      return null;
-    }
+  if (!entities.invoiceReference) {
+    return null;
+  }
+
+ return {
+  toolName: "request_refund",
+  arguments: {
+    invoiceId: entities.invoiceReference,
+    amountCents: entities.refundAmountCents,
+    reason: "Customer requested a refund.",
+  },
+};
+}
 
     case "PREPARE_CUSTOMER_RESPONSE":
       return null;
@@ -444,35 +470,44 @@ export async function runAgent(
     // APPROVAL REQUIRED
     // --------------------------------------------------------
 
-    if (
-      policy.decision ===
-      "APPROVAL_REQUIRED"
-    ) {
-      state = addAgentStep(
-        state,
-        {
-          stepNumber,
-          action:
-            plannedStep.action,
-          toolName:
-            mappedTool.toolName,
-          arguments:
-            mappedTool.arguments,
-          policy,
-          observation:
-            "Human approval is required before execution.",
-        },
-      );
+    if (policy.decision === "APPROVAL_REQUIRED") {
+  const referenceId =
+    typeof mappedTool.arguments.invoiceId === "string"
+      ? mappedTool.arguments.invoiceId
+      : "unknown";
 
-      return {
-        ...state,
-        status:
-          "WAITING_FOR_APPROVAL",
-        finalMessage:
-          "Human approval is required before this operation can execute.",
-      };
-    }
+  const amountCents =
+    typeof mappedTool.arguments.amountCents === "number"
+      ? mappedTool.arguments.amountCents
+      : undefined;
 
+  const approvalRequest = createApprovalRequest({
+    action: mappedTool.toolName,
+    reason:
+      "This operation requires human approval before execution.",
+    riskLevel: policy.riskLevel,
+    referenceId,
+    amountCents,
+  });
+
+  state = addAgentStep(state, {
+    stepNumber,
+    action: plannedStep.action,
+    toolName: mappedTool.toolName,
+    arguments: mappedTool.arguments,
+    policy,
+    observation:
+      `Human approval required. Approval request ${approvalRequest.approval.id} created.`,
+  });
+
+  return {
+    ...state,
+    status: "WAITING_FOR_APPROVAL",
+    finalMessage:
+      `Human approval is required before this operation can execute. ` +
+      `Approval request ${approvalRequest.approval.id} created.`,
+  };
+}
     // --------------------------------------------------------
     // ALLOW — Execute registered tool
     // --------------------------------------------------------

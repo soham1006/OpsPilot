@@ -45,6 +45,10 @@ When extracting entities:
 
 - refundAmountCents: convert an explicitly requested monetary refund amount
   into integer cents.
+- For refund requests, extract an explicit invoice ID/reference as invoiceReference when the customer provides one. Never invent an invoice reference.
+- For refund requests, extract the requested refund amount in cents when explicitly stated. Otherwise return null.
+- For refund requests, if an explicit invoice ID is present, propose FIND_INVOICE before REVIEW_BILLING_CONTEXT.
+Never invent an invoice ID.
 
 For appointment operations, requestedDate and requestedTime must use these
 canonical formats so deterministic application code can safely validate them.

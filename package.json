@@ -31,7 +31,8 @@
     "verify:tool-boundary": "tsx scripts/verify-tool-boundary.ts",
     "verify:critical-actions": "tsx scripts/verify-critical-actions.ts",
     "verify:approval-security": "tsx scripts/verify-approval-security.ts",
-    "verify:security:suite": "tsx scripts/verify-security-suite.ts"
+    "verify:security:suite": "tsx scripts/verify-security-suite.ts",
+    "verify:approval-integration": "tsx -r ./scripts/load-env.ts scripts/verify-approval-integration.ts"
   },
   "dependencies": {
     "@google/genai": "^2.22.0",

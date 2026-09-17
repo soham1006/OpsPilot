@@ -79,3 +79,21 @@ export function findTaskById(
 
   return task ?? null;
 }
+
+export function updateTaskStatus(
+  taskId: string,
+  status: "open" | "completed" | "blocked" | "failed" | "waiting_for_approval",
+) {
+  const row = db
+    .prepare(
+      `
+      UPDATE tasks
+      SET status = ?
+      WHERE id = ?
+      RETURNING *
+      `,
+    )
+    .get(status, taskId) as TaskRecord | undefined;
+
+  return row ?? null;
+}

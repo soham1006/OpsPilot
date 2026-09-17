@@ -156,6 +156,7 @@ Sarah Johnson`,
 
             refundAmountCents:
               null,
+              invoiceReference: null,
           },
 
           requestedAction:

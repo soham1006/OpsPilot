@@ -45,6 +45,7 @@ async function main(): Promise<void> {
               requestedDate: null,
               requestedTime: null,
               refundAmountCents: null,
+              invoiceReference: null,
             },
 
             requestedAction:
@@ -109,6 +110,7 @@ async function main(): Promise<void> {
               "10:00",
             refundAmountCents:
               null,
+              invoiceReference: null,
           },
 
           requestedAction:

@@ -26,6 +26,7 @@ export const ExtractedEntitiesSchema = z.object({
   requestedDate: z.string().nullable(),
   requestedTime: z.string().nullable(),
   refundAmountCents: z.number().int().nonnegative().nullable(),
+  invoiceReference: z.string().nullable().default(null),
 });
 
 export const AgentPlanSchema = z.object({

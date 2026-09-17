@@ -28,93 +28,102 @@ export default function AuditPage() {
     ).length;
 
   return (
-    <NorthstarShell
-  title="Audit timeline"
-  description="Security and operational audit history."
->
-      <div className="space-y-8">
-        <div>
+  <NorthstarShell
+    title="Audit timeline"
+    description="Security and operational audit history."
+  >
+    <div className="space-y-8">
+      <div>
+        <p className="max-w-2xl text-[13px] leading-6 text-black/55">
+          A chronological record of operational decisions,
+          executions, approvals, and verification events.
+        </p>
+      </div>
 
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-600">
-            A chronological record of operational decisions,
-            executions, approvals, and verification events.
+      <div className="grid gap-4 sm:grid-cols-3">
+        <div className="rounded-xl border border-black/[0.08] bg-white p-5 transition hover:border-black/[0.14]">
+          <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-black/40">
+            Events
+          </p>
+
+          <p className="mt-2 text-3xl font-semibold tracking-tight text-[#20201d]">
+            {logs.length}
+          </p>
+
+          <p className="mt-1 text-[11px] text-black/40">
+            Recent audit records
           </p>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-3">
-          <div className="rounded-2xl border border-zinc-200 bg-white p-5">
-            <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">
-              Events
-            </p>
+        <div className="rounded-xl border border-black/[0.08] bg-white p-5 transition hover:border-black/[0.14]">
+          <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-black/40">
+            Approvals
+          </p>
 
-            <p className="mt-2 text-3xl font-semibold text-zinc-950">
-              {logs.length}
-            </p>
+          <p className="mt-2 text-3xl font-semibold tracking-tight text-[#20201d]">
+            {approvalCount}
+          </p>
 
-            <p className="mt-1 text-xs text-zinc-500">
-              Recent audit records
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-zinc-200 bg-white p-5">
-            <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">
-              Approvals
-            </p>
-
-            <p className="mt-2 text-3xl font-semibold text-zinc-950">
-              {approvalCount}
-            </p>
-
-            <p className="mt-1 text-xs text-zinc-500">
-              Awaiting human decision
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-zinc-200 bg-white p-5">
-            <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">
-              Verified
-            </p>
-
-            <p className="mt-2 text-3xl font-semibold text-zinc-950">
-              {verifiedCount}
-            </p>
-
-            <p className="mt-1 text-xs text-zinc-500">
-              Successful verification events
-            </p>
-          </div>
+          <p className="mt-1 text-[11px] text-black/40">
+            Awaiting human decision
+          </p>
         </div>
 
-        {blockedCount > 0 && (
-          <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4">
-            <p className="text-sm font-semibold text-red-900">
-              {blockedCount} blocked security event
-              {blockedCount === 1 ? "" : "s"}
-            </p>
+        <div className="rounded-xl border border-black/[0.08] bg-white p-5 transition hover:border-black/[0.14]">
+          <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-black/40">
+            Verified
+          </p>
 
-            <p className="mt-1 text-sm text-red-800">
-              Review policy decisions before allowing
-              sensitive operations to proceed.
-            </p>
-          </div>
-        )}
+          <p className="mt-2 text-3xl font-semibold tracking-tight text-[#20201d]">
+            {verifiedCount}
+          </p>
 
-        <section>
-          <div className="mb-4 flex items-center justify-between">
+          <p className="mt-1 text-[11px] text-black/40">
+            Successful verification events
+          </p>
+        </div>
+      </div>
+
+      {blockedCount > 0 && (
+        <div className="rounded-xl border border-red-200/80 bg-red-50/70 px-5 py-4">
+          <div className="flex items-start gap-3">
+            <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-red-500" />
+
             <div>
-              <h2 className="text-lg font-semibold text-zinc-950">
-                Recent activity
-              </h2>
+              <p className="text-[13px] font-semibold text-red-900">
+                {blockedCount} blocked security event
+                {blockedCount === 1 ? "" : "s"}
+              </p>
 
-              <p className="mt-1 text-sm text-zinc-500">
-                Showing the latest 100 audit events.
+              <p className="mt-1 text-[12px] leading-5 text-red-800/80">
+                Review policy decisions before allowing sensitive
+                operations to proceed.
               </p>
             </div>
           </div>
+        </div>
+      )}
 
-          <AuditTimeline logs={logs} />
-        </section>
-      </div>
-    </NorthstarShell>
-  );
+      <section>
+        <div className="mb-4 flex items-end justify-between gap-4">
+          <div>
+            <h2 className="text-[15px] font-semibold text-[#20201d]">
+              Recent activity
+            </h2>
+
+            <p className="mt-1 text-[12px] text-black/40">
+              Showing the latest 100 audit events.
+            </p>
+          </div>
+
+          <span className="hidden text-[10px] font-medium uppercase tracking-[0.1em] text-black/30 sm:block">
+            Security log
+          </span>
+        </div>
+
+        <AuditTimeline logs={logs} />
+      </section>
+    </div>
+  </NorthstarShell>
+);
 }

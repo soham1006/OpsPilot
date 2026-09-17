@@ -12,6 +12,7 @@ export type RequestIntent = (typeof REQUEST_INTENTS)[number];
 export const PLANNING_ACTIONS = [
   "IDENTIFY_CUSTOMER",
   "FIND_APPOINTMENT",
+  "FIND_INVOICE",
   "CHECK_APPOINTMENT_AVAILABILITY",
   "READ_RELEVANT_POLICY",
   "REVIEW_BILLING_CONTEXT",
@@ -25,6 +26,7 @@ export interface ExtractedEntities {
   customerName: string | null;
   customerEmail: string | null;
   appointmentReference: string | null;
+  invoiceReference: string | null;
   requestedDate: string | null;
   requestedTime: string | null;
   refundAmountCents: number | null;

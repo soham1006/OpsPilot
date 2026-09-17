@@ -1,5 +1,6 @@
 import {
   findTaskById,
+  updateTaskStatus,
 } from "@/lib/db/repositories/tasks";
 
 import {
@@ -28,6 +29,30 @@ import type {
 } from "@/lib/agent/types";
 
 import { recordAuditEvent } from "@/lib/audit/events";
+
+function getTaskStatus(
+  agentStatus: AgentState["status"],
+): "open" | "completed" | "blocked" | "failed" | "waiting_for_approval" {
+  switch (agentStatus) {
+    case "COMPLETED":
+      return "completed";
+
+    case "BLOCKED":
+      return "blocked";
+
+    case "FAILED":
+    case "MAX_STEPS_REACHED":
+      return "failed";
+
+    case "WAITING_FOR_APPROVAL":
+      return "waiting_for_approval";
+
+    case "PENDING":
+    case "RUNNING":
+    default:
+      return "open";
+  }
+}
 
 function getAuditAction(action: string) {
   switch (action) {
@@ -280,6 +305,8 @@ export async function runMission(
             step.observation,
         });
 
+        updateTaskStatus(task.id, getTaskStatus(agentState.status));
+
        recordAuditEvent({
   taskId: task.id,
   actor:
@@ -378,6 +405,7 @@ export async function runMission(
           : {}),
       });
     } catch (error) {
+      updateTaskStatus(task.id, "failed");
       const errorMessage =
         error instanceof Error
           ? error.message
