@@ -3,6 +3,8 @@ import NorthstarShell from "@/components/northstar/NorthstarShell";
 import StatusBadge from "@/components/northstar/StatusBadge";
 import { getEmails } from "@/lib/db/northstar";
 
+export const dynamic = "force-dynamic";
+
 export default function InboxPage() {
   const emails = getEmails();
 

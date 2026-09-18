@@ -2,6 +2,8 @@ import NorthstarShell from "@/components/northstar/NorthstarShell";
 import StatusBadge from "@/components/northstar/StatusBadge";
 import { getCustomers } from "@/lib/db/northstar";
 
+export const dynamic = "force-dynamic";
+
 export default function CustomersPage() {
   const customers = getCustomers();
 

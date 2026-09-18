@@ -25,6 +25,8 @@ import {
   findExecutionStepsByAgentRunId,
 } from "@/lib/db/repositories/execution-steps";
 
+export const dynamic = "force-dynamic";
+
 interface MissionDetailPageProps {
   params: Promise<{
     id: string;

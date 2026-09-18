@@ -2,6 +2,8 @@ import NorthstarShell from "@/components/northstar/NorthstarShell";
 import StatusBadge from "@/components/northstar/StatusBadge";
 import { getAppointments } from "@/lib/db/northstar";
 
+export const dynamic = "force-dynamic";
+
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("en-US", {
     dateStyle: "medium",

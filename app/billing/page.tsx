@@ -2,6 +2,8 @@ import NorthstarShell from "@/components/northstar/NorthstarShell";
 import StatusBadge from "@/components/northstar/StatusBadge";
 import { getInvoices } from "@/lib/db/northstar";
 
+export const dynamic = "force-dynamic";
+
 function formatMoney(amountCents: number, currency: string) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",

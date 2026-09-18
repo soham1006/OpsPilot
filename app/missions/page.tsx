@@ -8,6 +8,8 @@ import {
   findMissionTasks,
 } from "@/lib/db/repositories/missions";
 
+export const dynamic = "force-dynamic";
+
 export default function MissionsPage() {
   const missions = findMissions();
 

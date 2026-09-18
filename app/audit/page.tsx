@@ -4,6 +4,8 @@ import {
   findAuditLogs,
 } from "@/lib/db/repositories/audit-logs";
 
+export const dynamic = "force-dynamic";
+
 export default function AuditPage() {
   const logs = findAuditLogs(100);
 
